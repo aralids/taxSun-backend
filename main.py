@@ -38,7 +38,8 @@ def calc_raw_tax_set(header_line, lines):
                                 "rawCount": 0, 
                                 "totCount": 0, 
                                 #"lineageNames": [["root", "root"]], 
-                                "rank": "root", 
+                                "rank": "root",  
+                                "lnIndex": 0,
                                 "names": [["root root", -1]], 
                                 "geneNames": [], 
                                 "eValues": [], 
@@ -228,12 +229,14 @@ def sort_func(ln):
 def correct_tot_counts(lns, tax_set):
     for i in range(0, len(lns)):
         child = lns[i][-1][1] + " " + lns[i][-1][0]
+        tax_set[child]["lnIndex"] = len(lns[i]) - 1
         for j in reversed(range(1, len(lns[i]) - 1)):
             name = lns[i][j][1]
             rank = lns[i][j][0]
             taxon = name + " " + rank
             tax_set[taxon]["totCount"] += tax_set[child]["unaCount"]
             tax_set[taxon]["children"] += [child]
+            tax_set[taxon]["lnIndex"] = j
         if child != "root root":
             tax_set["root root"]["totCount"] += tax_set[child]["unaCount"]
             tax_set["root root"]["children"] += [child]
