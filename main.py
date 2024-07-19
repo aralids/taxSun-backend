@@ -227,7 +227,10 @@ def sort_n_uniquify(lns):
     return newlns
 
 def sort_func(ln):
-    return ln[-1][1]
+    str = ""
+    for i in range(0, len(ln)):
+        str += ln[i][1]
+    return str
 
 def correct_tot_counts(lns, tax_set):
     for i in range(0, len(lns)):
