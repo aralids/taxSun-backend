@@ -38,6 +38,7 @@ def calc_raw_tax_set(header_line, lines):
                                 "rawCount": 0, 
                                 "totCount": 0, 
                                 #"lineageNames": [["root", "root"]], 
+                                "name": "root",
                                 "rank": "root",  
                                 "lnIndex": 0,
                                 "names": [["root root", -1]], 
@@ -85,6 +86,7 @@ def calc_raw_tax_set(header_line, lines):
             raw_tax_set[name + " " + rank] = {"taxID": taxID, 
                                               #"lineageNames": dictlist, 
                                               "rawCount": 1, 
+                                              "name": name,
                                               "rank": rank, 
                                               "totCount": 1, 
                                               "names": [[name + " " + rank, 0]], 
@@ -173,6 +175,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                                           "unaCount": 0, 
                                           "rawCount": 0, 
                                           "totCount": 0,
+                                          "name": name,
                                           "rank": rank, 
                                           "names": [[taxon, -1]], 
                                           "geneNames": []
