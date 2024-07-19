@@ -17,6 +17,8 @@ rankPatternFull = ["root", "superkingdom", "kingdom", "subkingdom", "superphylum
 @app.route('/load_tsv_data', methods=["POST"])
 def load_tsv_data():
     if request.method == 'POST':
+        print("request.files: ", request.files)
+        print("request.data: ", request.data)
         file = request.files['file'].read()
         file_lines = (file.decode("utf-8")[:-1]).split("\n")
         header_line = file_lines[0]
