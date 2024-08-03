@@ -28,7 +28,6 @@ def load_tsv_data():
         tax_set, lns = calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled)
         lns = sort_n_uniquify(lns)
         tax_set = correct_tot_counts(lns, tax_set)
-        print("len(lns): ", len(lns))
 
         return jsonify({"lns": lns, "taxSet": tax_set, "eValueEnabled": e_value_enabled, "fastaEnabled": fasta_enabled, "rankPatternFull": rankPatternFull})
 
@@ -37,11 +36,10 @@ def calc_raw_tax_set(header_line, lines):
     raw_tax_set = {"root root": {"taxID": "1", 
                                 "rawCount": 0, 
                                 "totCount": 0, 
-                                #"lineageNames": [["root", "root"]], 
                                 "name": "root",
                                 "rank": "root",  
                                 "lnIndex": 0,
-                                "names": [["root root", -1]], 
+                                "names": [], 
                                 "geneNames": [], 
                                 "eValues": [], 
                                 "fastaHeaders": [], 
@@ -84,12 +82,11 @@ def calc_raw_tax_set(header_line, lines):
             if not (dictlist[-1][0] == rank and dictlist[-1][1] == name):
                 dictlist += [[rank, name]]
             raw_tax_set[name + " " + rank] = {"taxID": taxID, 
-                                              #"lineageNames": dictlist, 
                                               "rawCount": 1, 
                                               "name": name,
                                               "rank": rank, 
                                               "totCount": 1, 
-                                              "names": [[name + " " + rank, 0]], 
+                                              "names": [name + " " + rank], 
                                               "geneNames": [gene_name], 
                                               "children": []}
             
@@ -111,7 +108,7 @@ def calc_raw_tax_set(header_line, lines):
             raw_tax_set[id_set[taxID]]["totCount"] += 1
             raw_tax_set[id_set[taxID]]["rawCount"] += 1
             raw_tax_set[id_set[taxID]]["geneNames"].append(gene_name)
-            raw_tax_set[id_set[taxID]]["names"][0][1] += 1
+            raw_tax_set[id_set[taxID]]["names"] += [id_set[taxID]]
 
             if len(line2list) >= 3:
                 if e_value != "":
@@ -158,7 +155,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                         existent[taxon]["unaCount"] += inherited_unaCount
                         existent[taxon]["totCount"] += inherited_unaCount
                         existent[taxon]["geneNames"] += inherited_geneNames
-                        existent[taxon]["names"] += [[inherited_taxon, existent[taxon]["names"][-1][1] + inherited_unaCount]]
+                        existent[taxon]["names"] += [inherited_taxon] * inherited_unaCount
                         if e_value_enabled:
                             existent[taxon]["eValues"] += inherited_eValues
                             inherited_eValues = []
@@ -177,7 +174,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                                           "totCount": 0,
                                           "name": name,
                                           "rank": rank, 
-                                          "names": [[taxon, -1]], 
+                                          "names": [], 
                                           "geneNames": []
                         }
                         if fasta_enabled:
@@ -188,7 +185,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                         created[taxon]["unaCount"] += inherited_unaCount
                         created[taxon]["totCount"] += inherited_unaCount
                         created[taxon]["geneNames"] += inherited_geneNames
-                        created[taxon]["names"] += [[inherited_taxon, created[taxon]["names"][-1][1] + inherited_unaCount]]
+                        created[taxon]["names"] += [inherited_taxon] * inherited_unaCount
                         if e_value_enabled:
                             created[taxon]["eValues"] += inherited_eValues
                             inherited_eValues = []
