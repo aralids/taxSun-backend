@@ -10,15 +10,13 @@ CORS(app)
 def index():
   return render_template('index.html')
 
-database_dir = "."
-taxdb = taxopy.TaxDb()
+database_dir = "C:/Users/PC/Desktop/krona"
+taxdb = taxopy.TaxDb(nodes_dmp=database_dir + "/nodes.dmp", names_dmp=database_dir + "/names.dmp", merged_dmp=database_dir + "/merged.dmp")
 rankPatternFull = ["root", "superkingdom", "kingdom", "subkingdom", "superphylum", "phylum", "subphylum", "superclass", "class", "subclass", "superorder", "order", "suborder", "superfamily", "family", "subfamily", "supergenus", "genus", "subgenus", "superspecies", "species"]
 
 @app.route('/load_tsv_data', methods=["POST"])
 def load_tsv_data():
     if request.method == 'POST':
-        print("request.files: ", request.files)
-        print("request.data: ", request.data)
         file = request.files['file'].read()
         file_lines = (file.decode("utf-8")[:-1]).split("\n")
         header_line = file_lines[0]
@@ -28,6 +26,7 @@ def load_tsv_data():
         tax_set, lns = calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled)
         lns = sort_n_uniquify(lns)
         tax_set = correct_tot_counts(lns, tax_set)
+        tax_set = sort_evalues(tax_set)
 
         return jsonify({"lns": lns, "taxSet": tax_set, "eValueEnabled": e_value_enabled, "fastaEnabled": fasta_enabled, "rankPatternFull": rankPatternFull})
 
@@ -43,13 +42,14 @@ def calc_raw_tax_set(header_line, lines):
                                 "geneNames": [], 
                                 "eValues": [], 
                                 "fastaHeaders": [], 
-                                "children": []}}
+                                "children": [],
+                                "directChildren": []}}
     id_set = {"1": "root root"}
     id_sum = 0
     raw_lns = [[["root", "root"]]]
 
     e_value_enabled = False
-    if "evalue" in header_line.lower():
+    if "value" in header_line.lower():
         e_value_enabled = True
 
     fasta_enabled = False
@@ -88,13 +88,14 @@ def calc_raw_tax_set(header_line, lines):
                                               "totCount": 1, 
                                               "names": [name + " " + rank], 
                                               "geneNames": [gene_name], 
-                                              "children": []}
+                                              "children": [],
+                                              "directChildren": []}
             
             if len(line2list) >= 3:
                 if e_value != "":
                     raw_tax_set[name + " " + rank]["eValues"] = [float(e_value)]
                 else:
-                    raw_tax_set[name + " " + rank]["eValues"] = [None]
+                    raw_tax_set[name + " " + rank]["eValues"] = [1]
 
             if len(line2list) >= 4:    
                 if fasta_header != "":
@@ -114,7 +115,7 @@ def calc_raw_tax_set(header_line, lines):
                 if e_value != "":
                     raw_tax_set[id_set[taxID]]["eValues"].append(float(e_value))
                 else:
-                    raw_tax_set[id_set[taxID]]["eValues"].append(None)
+                    raw_tax_set[id_set[taxID]]["eValues"].append(1)
 
             if len(line2list) >= 4:
                 if fasta_header != "":
@@ -169,6 +170,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                     if not (taxon in created):
                         created[taxon] = {"taxID": "", 
                                           "children": [],
+                                          "directChildren": [],
                                           "unaCount": 0, 
                                           "rawCount": 0, 
                                           "totCount": 0,
@@ -177,7 +179,7 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                                           "names": [], 
                                           "geneNames": []
                         }
-                        if fasta_enabled:
+                        if e_value_enabled:
                             created[taxon]["eValues"] = []
                         if fasta_enabled:
                             created[taxon]["fastaHeaders"] = []
@@ -187,9 +189,13 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                         created[taxon]["geneNames"] += inherited_geneNames
                         created[taxon]["names"] += [inherited_taxon] * inherited_unaCount
                         if e_value_enabled:
+                            if not "eValues" in created[taxon]:
+                                created[taxon]["eValues"] = []
                             created[taxon]["eValues"] += inherited_eValues
                             inherited_eValues = []
                         if fasta_enabled:
+                            if not "fastaHeaders" in created[taxon]:
+                                created[taxon]["fastaHeaders"] = []
                             created[taxon]["fastaHeaders"] += inherited_fastaHeaders
                             inherited_fastaHeaders = []
                         inherited_taxon = ""
@@ -208,7 +214,6 @@ def calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled):
                     lns[i] = lns[i][:j]
                 else:
                     lns[i] = lns[i][:j] + lns[i][(j+1):]
-
     tax_set = {**created, **existent}
 
     return tax_set, lns
@@ -239,10 +244,30 @@ def correct_tot_counts(lns, tax_set):
             taxon = name + " " + rank
             tax_set[taxon]["totCount"] += tax_set[child]["unaCount"]
             tax_set[taxon]["children"] += [child]
+            if len(tax_set[taxon]["directChildren"]) > 0:
+                if tax_set[taxon]["directChildren"][-1] != lns[i][j+1][1] + " " + lns[i][j+1][0]:
+                    tax_set[taxon]["directChildren"] += [lns[i][j+1][1] + " " + lns[i][j+1][0]]
+            else:
+                tax_set[taxon]["directChildren"] += [lns[i][j+1][1] + " " + lns[i][j+1][0]]
             tax_set[taxon]["lnIndex"] = j
         if child != "root root":
             tax_set["root root"]["totCount"] += tax_set[child]["unaCount"]
             tax_set["root root"]["children"] += [child]
+    return tax_set
+
+def sort_evalues(tax_set):
+    for name, obj in tax_set.items():
+        if "eValues" in obj and "fastaHeaders" in obj:
+            srtd = sorted(zip(obj["eValues"], obj["fastaHeaders"], obj["geneNames"], obj["names"]), key=lambda pair: pair[0])
+            obj["eValues"] = [e for e,f,g,n in srtd]
+            obj["fastaHeaders"] = [f for e,f,g,n in srtd]
+            obj["geneNames"] = [g for e,f,g,n in srtd]
+            obj["names"] = [n for e,f,g,n in srtd]
+        elif "eValues" in obj:
+            srtd = sorted(zip(obj["eValues"], obj["geneNames"], obj["names"]), key=lambda pair: pair[0])
+            obj["eValues"] = [e for e,g,n in srtd]
+            obj["geneNames"] = [g for e,g,n in srtd]
+            obj["names"] = [n for e,g,n in srtd]   
     return tax_set
 
 @app.route('/fetchID', methods = ['POST'])
@@ -252,5 +277,21 @@ def fetchID():
     print("taxid: ", taxid)
     return jsonify({"taxID": taxid[0]})
 
+@app.route('/load_faa_data', methods=["POST"])
+def load_faa_data():
+    if request.method == 'POST':
+        file = request.files['file']. read()
+        fasta_file = (file.decode("utf-8")[:-1]).split(">")
+        dict = {}
+        for seq in fasta_file:
+            seq2list = seq.split("\n")
+            if len(seq2list) > 1:
+                seq_name = seq2list[0]
+                seq_body = seq2list[1].replace("*", "")
+                dict[seq_name] = seq_body
+        return jsonify({"faaObj": dict})
+
 if __name__ == '__main__':
   app.run(port=5000)
+
+  
