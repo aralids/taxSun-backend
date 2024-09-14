@@ -11,7 +11,8 @@ def index():
   return render_template('index.html')
 
 database_dir = "C:/Users/PC/Desktop/krona"
-taxdb = taxopy.TaxDb(nodes_dmp=database_dir + "/nodes.dmp", names_dmp=database_dir + "/names.dmp", merged_dmp=database_dir + "/merged.dmp")
+#taxdb = taxopy.TaxDb(nodes_dmp=database_dir + "/nodes.dmp", names_dmp=database_dir + "/names.dmp", merged_dmp=database_dir + "/merged.dmp")
+taxdb = taxopy.TaxDb()
 rankPatternFull = ["root", "superkingdom", "kingdom", "subkingdom", "superphylum", "phylum", "subphylum", "superclass", "class", "subclass", "superorder", "order", "suborder", "superfamily", "family", "subfamily", "supergenus", "genus", "subgenus", "superspecies", "species"]
 
 @app.route('/load_tsv_data', methods=["POST"])
