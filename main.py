@@ -11,8 +11,8 @@ def index():
   return render_template('index.html')
 
 database_dir = "C:/Users/PC/Desktop/krona"
-#taxdb = taxopy.TaxDb(nodes_dmp=database_dir + "/nodes.dmp", names_dmp=database_dir + "/names.dmp", merged_dmp=database_dir + "/merged.dmp")
-taxdb = taxopy.TaxDb()
+taxdb = taxopy.TaxDb(nodes_dmp=database_dir + "/nodes.dmp", names_dmp=database_dir + "/names.dmp", merged_dmp=database_dir + "/merged.dmp")
+#taxdb = taxopy.TaxDb()
 rankPatternFull = ["root", "superkingdom", "kingdom", "subkingdom", "superphylum", "phylum", "subphylum", "superclass", "class", "subclass", "superorder", "order", "suborder", "superfamily", "family", "subfamily", "supergenus", "genus", "subgenus", "superspecies", "species"]
 
 @app.route('/load_tsv_data', methods=["POST"])
@@ -25,7 +25,14 @@ def load_tsv_data():
         lines = file_lines[1:]
         
         raw_tax_set, raw_lns, e_value_enabled, fasta_enabled = calc_raw_tax_set(header_line, lines)
+        print("size: ", len(lines))
+        id_lst = []
+        for obj in raw_tax_set.values():
+            if not (obj["taxID"] in id_lst):
+                id_lst += [obj["taxID"]]
+        print("id_lst: ", id_lst, len(id_lst))
         tax_set, lns = calc_tax_set(raw_tax_set, raw_lns, e_value_enabled, fasta_enabled)
+        print("div: ", len(raw_lns))
         lns = sort_n_uniquify(lns)
         tax_set = correct_tot_counts(lns, tax_set)
         tax_set = sort_evalues(tax_set)
@@ -293,7 +300,8 @@ def load_faa_data():
                 dict[seq_name] = seq_body
         return jsonify({"faaObj": dict})
 
+def sum(a, b):
+    return a + b
+
 if __name__ == '__main__':
   app.run(port=5000)
-
-  

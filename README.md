@@ -1,6 +1,9 @@
-# flask
-A minimal Flask web application.
+# taxSun – Legacy Flask Backend
 
-For a step-by-step guide to deploying on [Railway](https://railway.app/?referralCode=alphasec), see [this](https://alphasec.io/how-to-deploy-a-python-flask-app-on-railway/) post, or click the button below.
+This repository contains the original Flask-based backend implementation of taxSun, a web application for interactive exploration of metagenomic datasets.
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/igzwwg?referralCode=alphasec)
+The Flask version represents the first architectural iteration of the system and was later superseded by a FastAPI-based backend to improve performance, scalability, and API structure.
+
+This repository is preserved for documentation and development history purposes.
+For the current production-ready backend, see:
+https://github.com/aralids/taxSun-fastAPI-backend
