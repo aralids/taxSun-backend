@@ -1,4 +1,4 @@
 flask>=2.0.0
 gunicorn>=20.1.0
 taxopy==0.12.0
-flask_cors===4.0.1
+flask_cors===5.0.0
